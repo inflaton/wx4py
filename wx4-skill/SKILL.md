@@ -26,7 +26,7 @@ except ImportError:
 pip install wx4py
 
 # 方法2：从 GitHub 安装（最新版）
-pip install git+https://github.com/claw-codes/wx4py.git
+pip install git+https://github.com/inflaton/wx4py.git
 
 # 方法3：从本地安装
 cd /path/to/wx4py
