@@ -360,7 +360,7 @@ def send_to_all_contacts(contacts, message, prefix_name=True):
                 time.sleep(1.5)
 
                 # 组装个性化消息（默认在消息前加上对方名字）
-                personalized = f"{contact}\n{message}" if prefix_name else message
+                personalized = f"{contact}，您好！\n{message}" if prefix_name else message
 
                 # 发送消息
                 chat_input = wx.chat_window._get_chat_input()

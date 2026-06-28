@@ -291,17 +291,45 @@ with WeChatClient() as wx:
 
 ## AI Skill 快速使用
 
+有两种安装方式：在线安装和本地安装。
+
+### 方式一：在线安装（推荐）
+
 在 Claude Code 或 OpenClaw 中复制以下内容：
 
 ```
 安装并使用 wx4py skill。
 
-技能地址：https://raw.githubusercontent.com/claw-codes/wx4py/main/wx4-skill/SKILL.md
+技能地址：https://raw.githubusercontent.com/inflaton/wx4py/main/wx4-skill/SKILL.md
 
 1、执行命令 pip install wx4py 安装所需库。
 2、将 wx4py skill 安装至本地的 skills 目录，并在工具文档和记忆系统中记录该技能。
 3、阅读 skill 文档后，向我说明如何与你进行对话以使用该技能。
 ```
+
+### 方式二：本地安装
+
+如果你已克隆或下载了本项目代码，可以直接从本地安装：
+
+```
+安装并使用 wx4py skill。本项目代码在 <项目路径>。
+
+1、执行命令 pip install <项目路径> 安装所需库。
+2、执行命令 openclaw skills install <项目路径>/wx4-skill --as wx4-skill --global 安装 skill。
+3、阅读 skill 文档后，向我说明如何与你进行对话以使用该技能。
+```
+
+例如，如果项目在 `D:\code\wx4py`，则复制：
+
+```
+安装并使用 wx4py skill。本项目代码在 D:\code\wx4py。
+
+1、执行命令 pip install D:\code\wx4py 安装所需库。
+2、执行命令 openclaw skills install D:\code\wx4py\wx4-skill --as wx4-skill --global 安装 skill。
+3、阅读 skill 文档后，向我说明如何与你进行对话以使用该技能。
+```
+
+---
 
 安装后，直接用自然语言对话：
 
