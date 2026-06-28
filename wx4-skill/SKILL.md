@@ -1,6 +1,6 @@
 ---
 name: wx4-skill
-description: 微信自动化操作 skill，用于帮助用户快速完成微信消息群发、文件发送、群管理、聊天记录获取、多群监听、AI 自动回复等自动化任务。当用户需要批量发送微信消息、管理微信群、获取聊天记录、监听群消息、或接入 AI 群聊机器人时使用此 skill。
+description: 微信自动化 skill，用于帮助用户快速完成微信消息群发、文件发送、群管理、聊天记录获取、多群监听、AI 自动回复等自动化任务。当用户需要批量发送微信消息、管理微信群、获取聊天记录、监听群消息、或接入 AI 群聊机器人时使用此 skill。
 ---
 
 # 微信自动化操作 Skill
@@ -37,25 +37,16 @@ pip install .
 
 ```python
 from wx4py import WeChatClient
-
-# 测试导入
 print("✅ 安装成功！")
-
-# 检查版本（可选）
 import wx4py
 print(f"版本: {wx4py.__version__}")
 ```
-
-**重要提示**：
-- 如果用户提示 `ModuleNotFoundError: No module named 'wx4py'`，说明未安装
-- 必须先安装库再执行后续操作
-- 安装只需要一次，后续无需重复
 
 ---
 
 ## 概述
 
-本 skill 基于 wx4py 库，帮助用户通过 Python 代码自动化控制 Windows 微信客户端，完成重复性的消息发送、群管理等任务。
+本 skill 基于 wx4py 库，帮助用户通过 Python 代码自动化控制 Windows 微信客户端。
 
 **适用场景**：
 - 批量群发通知到多个群或联系人
@@ -68,15 +59,17 @@ print(f"版本: {wx4py.__version__}")
 
 **前置要求**：
 - Windows 系统
-- 微信 PC 客户端已安装并登录（Qt 版本，已测试 4.1.7.59、4.1.8.29）
+- 微信 PC 客户端已安装并登录（Qt 版本）
 - Python >=3.9
-- 终端、编辑器、脚本文件统一使用 UTF-8 编码环境，避免中文消息、群名、文件名出现乱码
+- 终端、编辑器、脚本文件统一使用 UTF-8 编码环境
 
 **编码环境建议**：
 - Python 源码文件保存为 UTF-8
 - PowerShell / 终端优先使用 UTF-8 编码
-- 读写文本、JSON、Markdown 文件时显式指定 `encoding='utf-8'`
-- 如果要输出中文日志或生成中文文件内容，优先验证终端和编辑器都已切换到 UTF-8
+- 读写文件时显式指定 `encoding='utf-8'`
+- 如果出现中文乱码，设置 `$env:PYTHONIOENCODING='utf-8'`
+
+---
 
 ## 核心功能
 
@@ -88,13 +81,8 @@ from wx4py import WeChatClient
 
 wx = WeChatClient()
 wx.connect()
-
-# 发送给联系人
 wx.chat_window.send_to("文件传输助手", "测试消息")
-
-# 发送到群
 wx.chat_window.send_to("工作群", "下午3点开会", target_type='group')
-
 wx.disconnect()
 ```
 
@@ -102,16 +90,8 @@ wx.disconnect()
 ```python
 wx = WeChatClient()
 wx.connect()
-
-# 批量发送到多个群
 groups = ["群1", "群2", "群3"]
-message = "重要通知：明天放假"
-wx.chat_window.batch_send(groups, message)
-
-# 批量发送到多个联系人
-contacts = ["张三", "李四", "王五"]
-wx.chat_window.batch_send(contacts, "周末聚餐通知", target_type='contact')
-
+wx.chat_window.batch_send(groups, "重要通知：明天放假")
 wx.disconnect()
 ```
 
@@ -121,271 +101,390 @@ wx.disconnect()
 ```python
 wx = WeChatClient()
 wx.connect()
-
-# 发送文件给联系人
 wx.chat_window.send_file_to("文件传输助手", r"C:\reports\weekly.pdf")
-
-# 发送文件到群
-wx.chat_window.send_file_to("工作群", r"C:\data.xlsx", target_type='group', message='可以携带消息')
-
-wx.disconnect()
-```
-
-#### 批量发送多个文件
-```python
-wx = WeChatClient()
-wx.connect()
-
-# 发送多个文件
-files = [
-    r"C:\images\photo1.png",
-    r"C:\images\photo2.png",
-    r"C:\documents\report.pdf"
-]
-wx.chat_window.send_file_to("文件传输助手", files)
-
+wx.chat_window.send_file_to("工作群", r"C:\data.xlsx", target_type='group', message='也可以携带消息')
 wx.disconnect()
 ```
 
 ### 3. 聊天记录获取
-
-#### 获取指定时间范围的聊天记录
 ```python
 wx = WeChatClient()
 wx.connect()
-
-# 获取今天的聊天记录
-messages = wx.chat_window.get_chat_history(
-    target="工作群",
-    target_type='group',
-    since='today'  # 'today' | 'yesterday' | 'week' | 'all'
-)
-
-# 处理消息
+messages = wx.chat_window.get_chat_history(target="工作群", target_type='group', since='today')
 for msg in messages:
     print(f"[{msg['time']}] {msg['content']}")
-
 wx.disconnect()
-```
-
-**返回格式**：
-```python
-{
-    "type": "text",      # text / link / system
-    "content": "消息内容",
-    "time": "今天 15:30"
-}
 ```
 
 ### 4. 群管理
 
-#### 获取群成员列表
 ```python
 wx = WeChatClient()
 wx.connect()
-
 members = wx.group_manager.get_group_members("工作群")
-print(f"群成员数量：{len(members)}")
-for member in members:
-    print(member)
-
-wx.disconnect()
-```
-
-#### 修改群昵称
-```python
-wx = WeChatClient()
-wx.connect()
-
 wx.group_manager.set_group_nickname("工作群", "张三的小号")
-
-wx.disconnect()
-```
-
-#### 获取群昵称
-```python
-wx = WeChatClient()
-wx.connect()
-
-nickname = wx.group_manager.get_group_nickname("工作群")
-print(f"我在本群的昵称：{nickname}")
-
-wx.disconnect()
-```
-
-#### 设置消息免打扰
-```python
-wx = WeChatClient()
-wx.connect()
-
-# 开启免打扰
 wx.group_manager.set_do_not_disturb("工作群", enable=True)
-
-# 关闭免打扰
-wx.group_manager.set_do_not_disturb("工作群", enable=False)
-
-wx.disconnect()
-```
-
-#### 置顶/取消置顶聊天
-```python
-wx = WeChatClient()
-wx.connect()
-
-# 置顶聊天
 wx.group_manager.set_pin_chat("工作群", enable=True)
-
-# 取消置顶
-wx.group_manager.set_pin_chat("工作群", enable=False)
-
-wx.disconnect()
-```
-
-#### 修改群公告（如果修改不成功，很大概率是因为不是管理员的原因）
-```python
-wx = WeChatClient()
-wx.connect()
-
-# 优先使用这种方式，从 Markdown 文件设置公告（支持表格、列表等格式）
 wx.group_manager.set_announcement_from_markdown("工作群", "markdown文件路径")
-
-# 直接设置文本公告
-wx.group_manager.modify_announcement_simple("工作群", "本群禁止发广告，违者移出")
-
+wx.group_manager.modify_announcement_simple("工作群", "新公告内容")
 wx.disconnect()
 ```
 
 ### 5. 群聊监听与 AI 自动回复
 
-#### 监听多个群聊消息
-```python
-from wx4py import CallbackHandler, MessageEvent, WeChatClient
-
-groups = ["工作群1", "工作群2", "工作群3"]
-
-def on_message(event: MessageEvent):
-    print(f"[{event.group}] {event.content}")
-    return ""  # 只监听，不自动回复
-
-with WeChatClient(auto_connect=True) as wx:
-    wx.process_groups(
-        groups,
-        [CallbackHandler(on_message)],
-        block=True,
-    )
-```
-
-#### 只在被 @ 时自动回复
 ```python
 from wx4py import AsyncCallbackHandler, MessageEvent, WeChatClient
 
 groups = ["工作群1", "工作群2"]
-
 def reply(event: MessageEvent):
     if not event.is_at_me:
         return ""
     return f"收到：{event.content}"
 
 with WeChatClient(auto_connect=True) as wx:
-    wx.process_groups(
-        groups,
-        [AsyncCallbackHandler(reply, auto_reply=True, reply_on_at=True)],
-        block=True,
-    )
+    wx.process_groups(groups, [AsyncCallbackHandler(reply, auto_reply=True, reply_on_at=True)], block=True)
 ```
 
-#### 监听指定群消息并转发给指定联系人或群
+详见现有文档中的更多示例（定时群发、转发规则、AI 接入等）。
+
+---
+
+## ⚡ 关键实战经验：UIA 不稳定性及应对方案
+
+### 问题：微信 UIA 辅助功能树不稳定
+
+wx4py 底层依赖 Windows UIAutomation，但微信（Qt）的 UIA 树**时好时坏**：
+
+- **健康状态**：100+ 节点，可正常搜索、发送
+- **故障状态**：仅 2 个节点（`mmui::MainWindow` + `MMUIRenderSubWindowHW`），搜索框不可用，所有操作失败
+
+**故障原因**：Qt 辅助功能桥未正确加载。微信启动时读取系统屏幕阅读器标志，若当时未开启，UIA 树就不完整。
+
+### 应对策略
+
+**方案一：确保窗口在前台再重试**
 ```python
-from wx4py import ForwardRuleHandler, GroupForwardRule, WeChatClient
+import time, win32gui, win32con
 
-rules = [
-    GroupForwardRule(
-        source_group="告警群",
-        targets=["值班同学"],
-        target_type="contact",
-        prefix_template="[告警群] ",
-    ),
-    GroupForwardRule(
-        source_group="项目群A",
-        targets=["项目群B"],
-        target_type="group",
-        prefix_template="[项目群A] ",
-    ),
-]
+# 恢复微信窗口
+hwnd_list = []
+def cb(hwnd, _):
+    title = win32gui.GetWindowText(hwnd)
+    cls = win32gui.GetClassName(hwnd)
+    if cls.startswith('Qt515') and ('WeChat' in title or 'Weixin' in title):
+        hwnd_list.append(hwnd)
+    return True
+win32gui.EnumWindows(cb, None)
 
-with WeChatClient(auto_connect=True) as wx:
-    wx.process_groups(
-        ["告警群", "项目群A"],
-        [ForwardRuleHandler(rules)],
-        block=True,
-    )
+for hwnd in hwnd_list:
+    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+try:
+    win32gui.SetForegroundWindow(hwnd_list[0])
+except:
+    pass
+time.sleep(1)
 ```
 
-**适用场景**：
-- 监听告警群，把消息转发给值班联系人
-- 监听业务群，把消息同步到另一个群
-- 针对不同来源群，配置不同的联系人或群作为目标
-
-#### 使用内置 AIClient 接入 OpenAI 兼容接口
+**方案二：绕过 WeChatClient，直接连 UIA**
 ```python
-import os
-from wx4py import AIClient, AIConfig, AIResponder, AsyncCallbackHandler, WeChatClient
+from wx4py.core.uia_wrapper import UIAWrapper
 
-ai = AIClient(
-    AIConfig(
-        base_url="https://api.example.com/v1",
-        api_format="completions",
-        model="your-model-id",
-        api_key=os.environ["AI_API_KEY"],
-        enable_thinking=False,
-    )
-)
-
-with WeChatClient(auto_connect=True) as wx:
-    wx.process_groups(
-        ["工作群"],
-        [
-            AsyncCallbackHandler(
-                AIResponder(ai, context_size=8, reply_on_at=True),
-                auto_reply=True,
-            )
-        ],
-        block=True,
-    )
+# 先找 HWND
+uia = UIAWrapper(135590)  # 替换为实际 HWND
+root = uia.root
 ```
 
-#### 使用自定义 AI 或业务系统
+**方案三：多次重试直到树健康**
 ```python
-from wx4py import AsyncCallbackHandler, MessageEvent, WeChatClient
-
-def custom_reply(event: MessageEvent):
-    if not event.is_at_me:
-        return ""
-
-    # 这里可以调用公司内部接口、其他 AI SDK 或业务系统。
-    return f"自定义回复：{event.content}"
-
-with WeChatClient(auto_connect=True) as wx:
-    wx.process_groups(
-        ["工作群"],
-        [AsyncCallbackHandler(custom_reply, auto_reply=True, reply_on_at=True)],
-        block=True,
-    )
+def get_healthy_uia(hwnd, max_attempts=5):
+    for i in range(max_attempts):
+        try:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+            time.sleep(0.5)
+            uia = UIAWrapper(hwnd)
+            root = uia.root
+            count = 0
+            stack = [(root, 0)]
+            while stack and count < 300:
+                n, d = stack.pop()
+                count += 1
+                if d < 15:
+                    try:
+                        for ch in n.GetChildren():
+                            stack.append((ch, d + 1))
+                    except:
+                        pass
+            if count >= 50:
+                return uia
+        except:
+            pass
+        time.sleep(1)
+    return None
 ```
 
-**实现说明**：
-- 每个群优先打开独立聊天窗口，适合同时监听多个群。
-- 自动回复通过发送队列串行执行，避免多个群同时回复时抢占窗口。
-- 本库发送的消息会自动记录，避免机器人监听到自己的回复后再次触发。
+**方案四：重启微信**（最彻底的修复，但需要重新扫码登录）
+```python
+from wx4py.core.win32 import restart_wechat_process, find_wechat_window
+hwnd = find_wechat_window()
+if hwnd:
+    restart_wechat_process(hwnd)
+```
+
+---
+
+## 📋 新功能：枚举全部联系人
+
+### 方法一：从 UIA 通讯录面板读取（推荐）
+
+可直接从微信通讯录面板的 UIA 树中读取 `mmui::ContactsCellItemView` 控件。
+
+```python
+import time, win32gui, win32con
+from wx4py.core.uia_wrapper import UIAWrapper
+
+def get_all_contacts(hwnd):
+    """从微信通讯录面板读取所有联系人（不含内置账号）"""
+    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+    time.sleep(0.5)
+    uia = UIAWrapper(hwnd)
+    root = uia.root
+
+    # 点击 Contacts 标签页
+    def find_and_click(root, name_part):
+        stack = [(root, 0)]
+        while stack:
+            n, d = stack.pop()
+            if d > 12: continue
+            try:
+                if name_part in (n.Name or "") and n.ControlTypeName == 'ButtonControl':
+                    n.Click()
+                    return True
+                for ch in n.GetChildren():
+                    stack.append((ch, d + 1))
+            except:
+                pass
+        return False
+
+    find_and_click(root, 'Contacts')
+    time.sleep(2)
+
+    # 读取通讯录控件
+    contacts = []
+    stack = [(root, 0)]
+    while stack:
+        n, d = stack.pop()
+        if d > 20: continue
+        try:
+            cls = n.ClassName or ''
+            name = (n.Name or '').strip()
+            if cls == 'mmui::ContactsCellItemView' and name and len(name) >= 2:
+                contacts.append(name)
+            for ch in n.GetChildren():
+                stack.append((ch, d + 1))
+        except:
+            pass
+
+    builtin = {'文件传输助手', '微信团队'}
+    return [c for c in contacts if c not in builtin]
+```
+
+### 方法二：通过搜索枚举（备选）
+
+```python
+from wx4py import WeChatClient
+SURNAMES = "王李张刘陈杨黄赵周吴徐孙马朱胡林郭何高罗"
+all_contacts = set()
+with WeChatClient() as wx:
+    for ch in SURNAMES:
+        try:
+            results = wx.chat_window.search(ch)
+            for gname, items in results.items():
+                for item in items:
+                    if item.name.strip():
+                        all_contacts.add(item.name.strip())
+        except:
+            pass
+```
+
+---
+
+## 📤 新功能：给所有联系人发消息（群发广播）
+
+### 完整工作流
+
+由于 wx4py 的 `send_to()` 在搜索联系人时如果联系人被分到"未知"组（而不是"联系人"组）会报 `not found`，
+需要通过点击搜索结果直接打开聊天再发送。
+
+```python
+import time
+from wx4py import WeChatClient
+from wx4py.features.chat import ChatWindow
+
+def send_to_all_contacts(contacts, message, prefix_name=True):
+    """
+    向所有联系人发送消息。
+
+    Args:
+        contacts: list[str] — 联系人名称列表
+        message: str — 要发送的消息
+        prefix_name: bool — 是否在消息前加上对方名字（默认 True）
+                       发送效果："{联系人名称}\n{消息内容}"
+
+    原理：对每个联系人，搜索 → 点击搜索结果 → 粘贴消息 → 发送。
+    """
+    with WeChatClient() as wx:
+        for contact in contacts:
+            try:
+                # 搜索联系人
+                results = wx.chat_window.search(contact)
+
+                # 在任意分组中查找（不限于"联系人"分组）
+                target_item = None
+                for gname, items in results.items():
+                    for item in items:
+                        if contact in item.name:
+                            target_item = item
+                            break
+                    if target_item:
+                        break
+
+                if not target_item:
+                    print(f"  ⚠️ 未找到: {contact}")
+                    continue
+
+                # 直接点击搜索结果
+                try:
+                    target_item.ctrl.Click()
+                except Exception:
+                    target_item.ctrl.Click(simulateMove=False)
+                time.sleep(1.5)
+
+                # 组装个性化消息（默认在消息前加上对方名字）
+                personalized = f"{contact}\n{message}" if prefix_name else message
+
+                # 发送消息
+                chat_input = wx.chat_window._get_chat_input()
+                if chat_input:
+                    if ChatWindow.send_text_via_input(chat_input, personalized):
+                        print(f"  ✅ {contact}")
+                    else:
+                        print(f"  ❌ 发送失败: {contact}")
+                else:
+                    print(f"  ❌ 未找到输入框: {contact}")
+
+            except Exception as e:
+                print(f"  ❌ 错误: {contact} - {e}")
+
+
+# 使用示例（默认带对方名字前缀）
+contacts = ["东浩（法越）", "Jeff", "Flora"]
+send_to_all_contacts(contacts, "群发消息测试")
+# 每人收到："张三\n群发消息测试"
+
+# 如需群发相同内容不加名字：
+# send_to_all_contacts(contacts, "群发消息测试", prefix_name=False)
+```
+
+### 完整脚本模板
+
+```python
+# -*- coding: utf-8 -*-
+"""给所有联系人发消息"""
+from wx4py import WeChatClient
+from wx4py.features.chat import ChatWindow
+
+# Step 1: 读取联系人列表
+contacts = ["联系人1", "联系人2"]  # 或用 get_all_contacts() 自动获取
+
+message = "你好，这是一条群发消息。"
+
+# Step 2: 发送（默认带对方名称）
+send_to_all_contacts(contacts, message)
+# 每人收到："联系人名称\n你好，这是一条群发消息。"
+
+# 如需禁用名称前缀：
+# send_to_all_contacts(contacts, message, prefix_name=False)
+```
+
+### 识别群聊 vs 个人联系人的启发式方法
+
+从聊天列表获取的条目可用以下关键词识别群聊：
+
+```python
+GROUP_KEYWORDS = ['群', '小聚', '讨论', '校友', '实验室', '家']
+is_group = any(kw in name for kw in GROUP_KEYWORDS)
+```
+
+---
+
+## 🔧 Win32 实用辅助函数
+
+在 UIA 连接不稳定时，以下 win32 操作可以帮助恢复：
+
+```python
+import win32gui, win32con, win32api
+
+def restore_wechat_window():
+    """恢复微信窗口到前台"""
+    hwnds = []
+    def cb(hwnd, _):
+        title = win32gui.GetWindowText(hwnd)
+        cls = win32gui.GetClassName(hwnd)
+        if cls.startswith('Qt515') and ('WeChat' in title or 'Weixin' in title):
+            hwnds.append(hwnd)
+        return True
+    win32gui.EnumWindows(cb, None)
+    for hwnd in hwnds:
+        win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+    if hwnds:
+        try:
+            win32gui.SetForegroundWindow(hwnds[0])
+        except:
+            pass
+
+def press_esc(times=3):
+    """按 Esc 键关闭可能的弹窗"""
+    for _ in range(times):
+        win32api.keybd_event(win32con.VK_ESCAPE, 0, 0, 0)
+        time.sleep(0.08)
+        win32api.keybd_event(win32con.VK_ESCAPE, 0, win32con.KEYEVENTF_KEYUP, 0)
+        time.sleep(0.2)
+
+def press_ctrl_key(key_code):
+    """模拟 Ctrl+<key>"""
+    win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
+    win32api.keybd_event(key_code, 0, 0, 0)
+    time.sleep(0.05)
+    win32api.keybd_event(key_code, 0, win32con.KEYEVENTF_KEYUP, 0)
+    win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
+```
+
+---
+
+## ⚠️ 已知限制
+
+### WeChat 4.x (Weixin.exe) 特殊问题
+
+- 微信进程名为 **Weixin.exe** 而非 `WeChat.exe`
+- **PyWxDump 不可用**：该库最高仅支持到 3.9.x，4.1.x 无偏移数据
+- 本地 `contact.db` 加密，无法直接读取
+- 联系人搜索被归类到"未知"组而非"联系人"组，导致 `send_to()` 失败
+
+### 通用限制
+
+- 仅支持 Windows 系统
+- 需要微信客户端已登录
+- 操作期间不要手动操作微信窗口
+- 受微信 UIA 限制，聊天记录无法获取发送者姓名
+
+---
 
 ## 使用模式
 
 ### 推荐：使用上下文管理器
 ```python
 from wx4py import WeChatClient
-
 with WeChatClient() as wx:
-    # 自动连接和断开
     wx.chat_window.send_to("文件传输助手", "Hello!")
 ```
 
@@ -393,131 +492,11 @@ with WeChatClient() as wx:
 ```python
 wx = WeChatClient()
 wx.connect()
-
 try:
-    # 执行操作
     wx.chat_window.send_to("文件传输助手", "Hello!")
 finally:
     wx.disconnect()
 ```
-
-## 实用脚本示例
-
-### 示例1：定时群发通知
-```python
-from wx4py import WeChatClient
-import schedule
-import time
-
-def send_daily_notification():
-    with WeChatClient() as wx:
-        groups = ["工作群1", "工作群2", "工作群3"]
-        message = "早安！今日工作提醒..."
-        wx.chat_window.batch_send(groups, message, target_type='group')
-        print("通知已发送")
-
-# 每天早上9点发送
-schedule.every().day.at("09:00").do(send_daily_notification)
-
-while True:
-    schedule.run_pending()
-    time.sleep(60)
-```
-
-### 示例2：收集昨天的聊天记录并保存
-```python
-from wx4py import WeChatClient
-import json
-from datetime import datetime
-
-with WeChatClient() as wx:
-    # 获取昨天的聊天记录
-    messages = wx.chat_window.get_chat_history(
-        target="工作群",
-        target_type='group',
-        since='yesterday'
-    )
-
-    # 保存到文件
-    filename = f"chat_history_{datetime.now().strftime('%Y%m%d')}.json"
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(messages, f, ensure_ascii=False, indent=2)
-
-    print(f"已保存 {len(messages)} 条消息到 {filename}")
-```
-
-### 示例3：批量发送文件到多个群
-```python
-from wx4py import WeChatClient
-import os
-
-# 准备要发送的文件
-files_dir = r"C:\weekly_reports"
-files = [os.path.join(files_dir, f) for f in os.listdir(files_dir) if f.endswith('.pdf')]
-
-groups = ["管理群", "开发群", "产品群"]
-
-with WeChatClient() as wx:
-    for group in groups:
-        print(f"正在向 {group} 发送文件...")
-        wx.chat_window.send_file_to(group, files, target_type='group')
-        print(f"已完成 {group}")
-```
-
-## 注意事项
-
-### 操作限制
-- 仅支持 Windows 系统
-- 需要微信客户端已登录
-- 操作期间不要手动操作微信窗口
-- 受微信 UIA 限制，聊天记录无法获取发送者姓名
-
-### 最佳实践
-- 使用上下文管理器确保连接正确释放
-- 批量操作时添加适当延迟，避免操作过快
-- 重要操作前先测试小范围验证
-- 群聊机器人优先使用 `reply_on_at=True`，避免普通群消息触发自动回复
-- AI 回调耗时会影响监听延迟，大规模群监听时建议使用响应更快的模型或业务接口
-- 捕获异常并记录日志
-- 需要系统查看方法说明时，优先参考 `docs/guide/API_GUIDE.md`
-
-### 异常处理
-```python
-from wx4py import WeChatClient, WeChatNotFoundError, ControlNotFoundError
-
-try:
-    with WeChatClient() as wx:
-        wx.chat_window.send_to("目标", "消息")
-except WeChatNotFoundError:
-    print("错误：未找到微信窗口，请确保微信已打开并登录")
-except ControlNotFoundError as e:
-    print(f"错误：未找到控件 - {e}")
-except Exception as e:
-    print(f"未知错误：{e}")
-```
-
-## 工作流程指导
-
-当用户请求微信自动化任务时，按以下步骤操作：
-
-1. **理解需求**
-   - 确认目标（联系人/群组）
-   - 确认操作类型（发消息/发文件/获取记录/管理设置）
-   - 确认是否批量操作
-
-2. **编写脚本**
-   - 使用上述示例作为模板
-   - 添加必要的错误处理
-   - 考虑操作延迟和频率限制
-
-3. **验证和测试**
-   - 先用小范围测试（如"文件传输助手"）
-   - 确认脚本正确运行后再扩大范围
-
-4. **执行和反馈**
-   - 运行脚本并观察结果
-   - 提供清晰的执行反馈
-   - 必要时保存日志
 
 ## 快速参考
 
@@ -529,38 +508,19 @@ except Exception as e:
 | 发送文件 | `chat_window.send_file_to(target, file_path)` | `wx.chat_window.send_file_to("张三", r"C:\file.pdf")` |
 | 获取聊天记录 | `chat_window.get_chat_history(target, target_type, since)` | `wx.chat_window.get_chat_history("工作群", 'group', 'today')` |
 | 获取群成员 | `group_manager.get_group_members(group_name)` | `wx.group_manager.get_group_members("工作群")` |
-| 获取群昵称 | `group_manager.get_group_nickname(group_name)` | `wx.group_manager.get_group_nickname("工作群")` |
-| 设置群昵称 | `group_manager.set_group_nickname(group_name, nickname)` | `wx.group_manager.set_group_nickname("工作群", "小张")` |
-| 消息免打扰 | `group_manager.set_do_not_disturb(group_name, enable)` | `wx.group_manager.set_do_not_disturb("工作群", True)` |
-| 置顶聊天 | `group_manager.set_pin_chat(group_name, enable)` | `wx.group_manager.set_pin_chat("工作群", True)` |
-| 修改群公告 | `group_manager.modify_announcement_simple(group_name, content)` | `wx.group_manager.modify_announcement_simple("工作群", "新公告")` |
-| 监听/处理多个群聊 | `process_groups(groups, handlers, block=True)` | `wx.process_groups(["群1"], [handler], block=True)` |
-| 监听群消息并转发 | `process_groups(groups, [ForwardRuleHandler(rules)], block=True)` | `wx.process_groups(["群1"], [ForwardRuleHandler(rules)], block=True)` |
-| 自动回复群聊 | `AsyncCallbackHandler(reply_func, auto_reply=True)` | `AsyncCallbackHandler(reply, auto_reply=True, reply_on_at=True)` |
-| AI 自动回复 | `AIResponder(ai_client, context_size=8)` | `AsyncCallbackHandler(AIResponder(ai, context_size=8, reply_on_at=True), auto_reply=True)` |
+| **枚举全部联系人** | `get_all_contacts(hwnd)` | 见上"新功能"章节 |
+| **群发广播（带名字）** | `send_to_all_contacts(contacts, msg, prefix_name=True)` | 默认在消息前加对方名字 |
 
 ## 常见问题
 
 **Q: 脚本运行时提示找不到微信窗口？**
-A: 确保微信已打开并登录，窗口不要最小化。
+A: 确保微信已打开并登录，窗口不要最小化。可尝试 `restore_wechat_window()`。
 
-**Q: 批量发送时部分失败？**
-A: 检查目标名称是否正确，建议在每次发送间添加延迟。
+**Q: UIA 树只有 2 个节点？**
+A: 尝试 `restore_wechat_window()` → `press_esc(5)` → 重试。最彻底的方法是重启微信。
 
-**Q: 中文消息、群名或导出文件出现乱码？**
-A: 先确认终端、编辑器、Python 源文件和读写文件逻辑都使用 UTF-8；写文件时显式传入 `encoding='utf-8'`，避免依赖系统默认编码。
+**Q: `send_to()` 报 "not found" 但联系人明明存在？**
+A: 微信 4.x 将联系人归类到"未知"组。改用搜索→直接点击的方案（即 `send_to_all_contacts`）。
 
-**Q: 可以获取图片和语音消息吗？**
-A: 目前主要支持文本消息，图片和语音的完整获取受限于微信 UIA。
-
-**Q: AI 自动回复会回复所有群消息吗？**
-A: 不会，推荐传入 `reply_on_at=True`。普通消息只监听，只有群消息 @ 当前群昵称时才会触发回复。
-
-**Q: 可以不用内置 AIClient，接入自己的 AI 服务吗？**
-A: 可以。`process_groups()` 接收任意 handler；最简单的方式是使用 `AsyncCallbackHandler` 包装你自己的回调，回调返回字符串即可入队发送。
-
-**Q: 多个群同时触发回复会抢占窗口吗？**
-A: 自动回复会进入发送队列串行执行，避免多个独立聊天窗口同时发送导致焦点抢占。
-
-**Q: 脚本可以在后台运行吗？**
-A: 微信窗口需要在前台才能进行 UI 自动化操作。
+**Q: 中文字符出现乱码？**
+A: 设置 `$env:PYTHONIOENCODING='utf-8'`，文件保存为 UTF-8。
